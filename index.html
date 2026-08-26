@@ -586,7 +586,7 @@ function abrirAjustes(){
     <h4>Privacidad y datos</h4>
     <button class="btn btn-ghost" onclick="mostrarPolitica()">Ver política de datos (Habeas Data)</button>
     <div style="height:8px"></div>
-    <button class="btn btn-ghost" onclick="exportar()">Exportar copia de seguridad</button>
+    <button class="btn btn-green" onclick="abrirRespaldo()">📤 Copia de seguridad (Excel / WhatsApp)</button>
     <div style="height:8px"></div>
     <button class="btn btn-ghost" style="color:var(--red)" onclick="borrarTodo()">Borrar todos los datos</button>
     <div style="height:14px"></div>
@@ -615,10 +615,301 @@ function mostrarPolitica(){
 async function exportar(){
   const data={version:1,exportado:isoCO(),config:CFG,clientes:CLIENTES,movimientos:MOVS};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob); const a=document.createElement('a');
-  a.href=url; a.download='fiado-respaldo-'+nowCO().toLocaleDateString('en-CA',{timeZone:'America/Bogota'})+'.json'; a.click();
-  URL.revokeObjectURL(url); toast('Copia descargada ✔');
+  await compartirODescargar(blob,'fiado-respaldo-'+nowCO().toLocaleDateString('en-CA',{timeZone:'America/Bogota'})+'.json','Respaldo Fiado');
 }
+/* ============================================================
+   COPIA DE SEGURIDAD — Excel / CSV / WhatsApp / Restaurar
+   (solo LEE los datos; nada de lo que ya tienes se modifica)
+   ============================================================ */
+
+/* --- helpers de archivo --- */
+function stampCO(){ return nowCO().toLocaleDateString('en-CA',{timeZone:'America/Bogota'}); }
+function nombreTienda(){ return (CFG.tienda||'Mi tienda').replace(/[\\/:*?"<>|]/g,'').trim()||'Mi tienda'; }
+function horaCO(iso){ try{ return new Date(iso).toLocaleTimeString('es-CO',{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit',hour12:true}); }catch(e){ return ''; } }
+function fechaCorta(iso){ try{ return new Date(iso).toLocaleDateString('es-CO',{timeZone:'America/Bogota',day:'2-digit',month:'2-digit',year:'numeric'}); }catch(e){ return ''; } }
+
+async function compartirODescargar(blob, filename, titulo){
+  try{
+    const file = new File([blob], filename, {type: blob.type});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:titulo, text:titulo});
+      toast('Copia enviada ✔'); return;
+    }
+  }catch(e){ if(e && e.name==='AbortError') return; }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+  toast('Archivo descargado ✔');
+}
+
+/* --- resumen de todo lo que hay guardado --- */
+function resumenDatos(){
+  const filas = CLIENTES.map(c=>{
+    const ms = MOVS.filter(m=>m.clienteId===c.id);
+    const fiado = ms.filter(m=>m.tipo==='fiado').reduce((s,m)=>s+(+m.monto||0),0);
+    const abono = ms.filter(m=>m.tipo==='abono').reduce((s,m)=>s+(+m.monto||0),0);
+    return { c, movs:ms.length, fiado, abono, saldo: fiado-abono, dias: deudaMasVieja(c.id) };
+  }).sort((a,b)=> b.saldo-a.saldo || a.c.nombre.localeCompare(b.c.nombre));
+  const totalFiado = filas.reduce((s,x)=>s+x.fiado,0);
+  const totalAbono = filas.reduce((s,x)=>s+x.abono,0);
+  const porCobrar  = filas.filter(x=>x.saldo>0.5).reduce((s,x)=>s+x.saldo,0);
+  const deben = filas.filter(x=>x.saldo>0.5).length;
+  return { filas, totalFiado, totalAbono, porCobrar, deben, alDia: filas.length-deben, nMovs: MOVS.length };
+}
+
+/* --- EXCEL (.xls, 3 hojas: Resumen / Clientes / Movimientos) --- */
+function xesc(s){ return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[m])); }
+const cT = v => '<Cell ss:StyleID="txt"><Data ss:Type="String">'+xesc(v)+'</Data></Cell>';
+const cN = v => '<Cell ss:StyleID="cop"><Data ss:Type="Number">'+(Math.round(Number(v)||0))+'</Data></Cell>';
+const cI = v => '<Cell ss:StyleID="txt"><Data ss:Type="Number">'+(Math.round(Number(v)||0))+'</Data></Cell>';
+const cH = v => '<Cell ss:StyleID="hd"><Data ss:Type="String">'+xesc(v)+'</Data></Cell>';
+const fila = cells => '<Row>'+cells.join('')+'</Row>';
+
+function construirExcel(conTelefono){
+  const R = resumenDatos();
+  const hoja = (nombre, filas) =>
+    '<Worksheet ss:Name="'+xesc(nombre)+'"><Table>'+filas.join('')+'</Table>'+
+    '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions></Worksheet>';
+
+  /* Hoja 1: Resumen */
+  const h1 = [
+    fila([cH('RESPALDO — CUADERNO DE FIADO')]),
+    fila([cT('Tienda'), cT(CFG.tienda||'Mi tienda')]),
+    fila([cT('Tendero'), cT(CFG.tendero||'—')]),
+    fila([cT('Fecha del respaldo'), cT(fechaCorta(new Date().toISOString())+' '+horaCO(new Date().toISOString())+' (Colombia UTC−5)')]),
+    fila([cT('')]),
+    fila([cH('CONCEPTO'), cH('VALOR')]),
+    fila([cT('Total por cobrar'), cN(R.porCobrar)]),
+    fila([cT('Total fiado histórico'), cN(R.totalFiado)]),
+    fila([cT('Total abonado histórico'), cN(R.totalAbono)]),
+    fila([cT('Clientes registrados'), cI(R.filas.length)]),
+    fila([cT('Clientes que deben'), cI(R.deben)]),
+    fila([cT('Clientes al día'), cI(R.alDia)]),
+    fila([cT('Movimientos registrados'), cI(R.nMovs)])
+  ];
+
+  /* Hoja 2: Clientes */
+  const h2 = [ fila([cH('CLIENTE'),cH('TELÉFONO'),cH('SALDO ACTUAL'),cH('TOTAL FIADO'),cH('TOTAL ABONADO'),cH('DÍAS DEUDA MÁS VIEJA'),cH('ESTADO'),cH('MOVIMIENTOS'),cH('CLIENTE DESDE'),cH('AUTORIZÓ DATOS')]) ];
+  R.filas.forEach(x=>{
+    h2.push(fila([
+      cT(x.c.nombre),
+      cT(conTelefono? (x.c.telefono||'—') : maskPhone(x.c.telefono)),
+      cN(x.saldo), cN(x.fiado), cN(x.abono),
+      cI(x.saldo>0.5? x.dias : 0),
+      cT(x.saldo>0.5?'Debe':'Al día'),
+      cI(x.movs),
+      cT(x.c.creado? fechaCorta(x.c.creado):'—'),
+      cT(x.c.consentimiento?'Sí':'No')
+    ]));
+  });
+  h2.push(fila([cH('TOTAL'),cT(''),cN(R.porCobrar),cN(R.totalFiado),cN(R.totalAbono),cT(''),cT(''),cI(R.nMovs),cT(''),cT('')]));
+
+  /* Hoja 3: Movimientos */
+  const h3 = [ fila([cH('FECHA'),cH('HORA'),cH('CLIENTE'),cH('TELÉFONO'),cH('TIPO'),cH('DESCRIPCIÓN'),cH('FIADO (+)'),cH('ABONO (−)'),cH('ID')]) ];
+  const porFecha = MOVS.slice().sort((a,b)=> new Date(a.fecha)-new Date(b.fecha));
+  porFecha.forEach(m=>{
+    const c = CLIENTES.find(x=>x.id===m.clienteId);
+    h3.push(fila([
+      cT(fechaCorta(m.fecha)), cT(horaCO(m.fecha)),
+      cT(c? c.nombre : '(cliente eliminado)'),
+      cT(c? (conTelefono? (c.telefono||'—') : maskPhone(c.telefono)) : '—'),
+      cT(m.tipo==='fiado'?'Fiado':'Abono'),
+      cT(m.descripcion||''),
+      cN(m.tipo==='fiado'? m.monto : 0),
+      cN(m.tipo==='abono'? m.monto : 0),
+      cT(m.id)
+    ]));
+  });
+  h3.push(fila([cH('TOTALES'),cT(''),cT(''),cT(''),cT(''),cT(''),cN(R.totalFiado),cN(R.totalAbono),cT('')]));
+
+  return '<?xml version="1.0" encoding="UTF-8"?>\n'+
+  '<?mso-application progid="Excel.Sheet"?>\n'+
+  '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'+
+  '<Styles>'+
+    '<Style ss:ID="Default" ss:Name="Normal"><Font ss:FontName="Calibri" ss:Size="11"/><Alignment ss:Vertical="Center"/></Style>'+
+    '<Style ss:ID="hd"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0B5D3B" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style>'+
+    '<Style ss:ID="txt"><Font ss:FontName="Calibri" ss:Size="11"/></Style>'+
+    '<Style ss:ID="cop"><Font ss:FontName="Calibri" ss:Size="11"/><NumberFormat ss:Format="&quot;$&quot;#,##0"/></Style>'+
+  '</Styles>'+
+  hoja('Resumen',h1)+hoja('Clientes',h2)+hoja('Movimientos',h3)+
+  '</Workbook>';
+}
+
+async function exportarExcel(conTelefono){
+  if(!CLIENTES.length){ toast('Todavía no hay datos para exportar'); return; }
+  const xml = construirExcel(conTelefono);
+  const blob = new Blob(['\ufeff'+xml],{type:'application/vnd.ms-excel;charset=utf-8'});
+  await compartirODescargar(blob,'Fiado-'+nombreTienda().replace(/\s+/g,'-')+'-'+stampCO()+'.xls','Respaldo Fiado — '+nombreTienda());
+}
+
+/* --- CSV (por si el celular no abre .xls) --- */
+function csvCell(v){
+  let s = String(v==null?'':v);
+  if(/^[=+\-@]/.test(s)) s="'"+s;          // evita fórmulas raras en Excel
+  return '"'+s.replace(/"/g,'""')+'"';
+}
+async function exportarCSV(conTelefono){
+  if(!CLIENTES.length){ toast('Todavía no hay datos para exportar'); return; }
+  const R = resumenDatos(); const L=[];
+  L.push(['RESPALDO FIADO',nombreTienda()].map(csvCell).join(';'));
+  L.push(['Fecha',fechaCorta(new Date().toISOString())+' '+horaCO(new Date().toISOString())].map(csvCell).join(';'));
+  L.push(['Total por cobrar',R.porCobrar].map(csvCell).join(';'));
+  L.push(['Total fiado',R.totalFiado].map(csvCell).join(';'));
+  L.push(['Total abonado',R.totalAbono].map(csvCell).join(';'));
+  L.push('');
+  L.push('CLIENTES');
+  L.push(['Cliente','Telefono','Saldo actual','Total fiado','Total abonado','Dias deuda mas vieja','Estado','Movimientos','Cliente desde','Autorizo datos'].map(csvCell).join(';'));
+  R.filas.forEach(x=>L.push([x.c.nombre, conTelefono?(x.c.telefono||''):maskPhone(x.c.telefono), Math.round(x.saldo), Math.round(x.fiado), Math.round(x.abono), (x.saldo>0.5?x.dias:0), (x.saldo>0.5?'Debe':'Al dia'), x.movs, x.c.creado?fechaCorta(x.c.creado):'', x.c.consentimiento?'Si':'No'].map(csvCell).join(';')));
+  L.push('');
+  L.push('MOVIMIENTOS');
+  L.push(['Fecha','Hora','Cliente','Tipo','Descripcion','Fiado (+)','Abono (-)','ID'].map(csvCell).join(';'));
+  MOVS.slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).forEach(m=>{
+    const c=CLIENTES.find(x=>x.id===m.clienteId);
+    L.push([fechaCorta(m.fecha), horaCO(m.fecha), c?c.nombre:'(eliminado)', m.tipo==='fiado'?'Fiado':'Abono', m.descripcion||'', m.tipo==='fiado'?Math.round(m.monto):0, m.tipo==='abono'?Math.round(m.monto):0, m.id].map(csvCell).join(';'));
+  });
+  const blob=new Blob(['\ufeff'+L.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  await compartirODescargar(blob,'Fiado-'+stampCO()+'.csv','Respaldo Fiado CSV');
+}
+
+/* --- REPORTE DE TEXTO PARA WHATSAPP --- */
+function reporteTexto(conTelefono, conDetalle){
+  const R = resumenDatos();
+  const T=[];
+  T.push('📓 *RESPALDO FIADO — '+(CFG.tienda||'Mi tienda').toUpperCase()+'*');
+  T.push('🗓 '+fechaCorta(new Date().toISOString())+'  '+horaCO(new Date().toISOString())+' (Colombia)');
+  T.push('');
+  T.push('*RESUMEN*');
+  T.push('• Total por cobrar: *'+COP(R.porCobrar)+'*');
+  T.push('• Clientes: '+R.filas.length+'  (deben '+R.deben+' · al día '+R.alDia+')');
+  T.push('• Fiado histórico: '+COP(R.totalFiado));
+  T.push('• Abonado histórico: '+COP(R.totalAbono));
+  T.push('• Movimientos: '+R.nMovs);
+
+  const deudores = R.filas.filter(x=>x.saldo>0.5);
+  if(deudores.length){
+    T.push('');
+    T.push('*QUIÉNES DEBEN ('+deudores.length+')*');
+    deudores.forEach((x,i)=>{
+      T.push((i+1)+'. '+x.c.nombre+' — *'+COP(x.saldo)+'*'+(x.dias?' (hace '+x.dias+' día'+(x.dias===1?'':'s')+')':'')+(conTelefono&&x.c.telefono?' · '+x.c.telefono:''));
+    });
+  }
+  const alDia = R.filas.filter(x=>x.saldo<=0.5);
+  if(alDia.length){
+    T.push('');
+    T.push('*AL DÍA ('+alDia.length+')*');
+    T.push(alDia.map(x=>x.c.nombre).join(', '));
+  }
+  if(conDetalle && MOVS.length){
+    T.push('');
+    T.push('———————————');
+    T.push('*DETALLE DE MOVIMIENTOS*');
+    R.filas.forEach(x=>{
+      const ms = movsDe(x.c.id).slice().reverse();
+      if(!ms.length) return;
+      T.push('');
+      T.push('▸ *'+x.c.nombre+'*  (saldo '+COP(x.saldo)+')');
+      ms.forEach(m=>{
+        T.push('   '+fechaCorta(m.fecha)+'  '+(m.tipo==='fiado'?'Fiado':'Abono')+(m.descripcion?' · '+m.descripcion:'')+'  '+(m.tipo==='fiado'?'+':'−')+COP(m.monto));
+      });
+    });
+  }
+  T.push('');
+  T.push('_Generado por Fiado — Vibras Positivas HM_');
+  return T.join('\n');
+}
+
+async function enviarWhatsApp(conTelefono){
+  if(!CLIENTES.length){ toast('Todavía no hay datos para enviar'); return; }
+  const completo = reporteTexto(conTelefono,true);
+  let envio = completo;
+  if(completo.length > 1600){                       // WhatsApp corta enlaces muy largos
+    envio = reporteTexto(conTelefono,false) + '\n\n_(El detalle completo quedó copiado: pégalo en un segundo mensaje.)_';
+    try{ await navigator.clipboard.writeText(completo); toast('Detalle completo copiado — pégalo aparte'); }catch(e){}
+  }
+  window.open('https://wa.me/?text='+encodeURIComponent(envio),'_blank');
+}
+
+/* --- RESTAURAR DESDE RESPALDO .json (solo agrega, no borra) --- */
+async function restaurarArchivo(file){
+  try{
+    const txt = await file.text();
+    const data = JSON.parse(txt);
+    if(!data || !Array.isArray(data.clientes) || !Array.isArray(data.movimientos)) throw new Error('formato');
+    if(!confirm('Se van a agregar '+data.clientes.length+' clientes y '+data.movimientos.length+' movimientos del respaldo.\n\nLo que ya tienes en el celular NO se borra. ¿Continuar?')) return;
+    let nc=0, nm=0;
+    for(const c of data.clientes){ if(c && c.id){ await put('clientes',c); nc++; } }
+    for(const m of data.movimientos){ if(m && m.id){ await put('movimientos',m); nm++; } }
+    if(data.config && typeof data.config==='object'){
+      const guardar = (!CFG.tienda || CFG.tienda==='Mi tienda') && !CFG.tendero;
+      if(guardar){ CFG=Object.assign(CFG,data.config,{k:'cfg'}); await guardarCfg(); }
+    }
+    await cargarTodo(); filtro=''; render(); closeModal();
+    toast('Restaurado: '+nc+' clientes y '+nm+' movimientos ✔');
+  }catch(e){
+    console.error(e);
+    alert('No se pudo leer el archivo. Debe ser un respaldo .json generado por esta misma app.');
+  }
+}
+
+/* --- Modal de copia de seguridad --- */
+function abrirRespaldo(){
+  const R = resumenDatos();
+  openModal(`
+    <h2>Copia de seguridad</h2>
+    <p>Tus datos viven solo en este celular. Saca una copia cada semana y guárdala en tu WhatsApp o correo.</p>
+    <div class="notice">
+      Hoy tienes <b>${R.filas.length} cliente${R.filas.length===1?'':'s'}</b>, <b>${R.nMovs} movimiento${R.nMovs===1?'':'s'}</b> y
+      <b>${COP(R.porCobrar)}</b> por cobrar. Todo eso sale en la copia.
+    </div>
+
+    <div class="consent" style="margin-top:14px">
+      <input type="checkbox" id="rTel">
+      <span><b>Incluir los teléfonos completos</b><br>Si lo dejas apagado salen ocultos (••• ••• 67). Recomendado apagarlo si vas a mandar la copia por WhatsApp — Ley 1581 de 2012.</span>
+    </div>
+
+    <h4>1 · Excel</h4>
+    <button class="btn btn-green" id="rXls">📊 Sacar copia en Excel</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-ghost" id="rCsv">Bajar en CSV (si no abre el Excel)</button>
+    <p style="font-size:12px;margin-top:8px">3 hojas: Resumen, Clientes (con saldos) y Movimientos (fiado por fiado).</p>
+
+    <h4>2 · WhatsApp</h4>
+    <button class="btn btn-wa" id="rWaFile">📎 Mandar el Excel por WhatsApp</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-wa" id="rWaTxt">💬 Mandar el reporte escrito</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-ghost" id="rCopy">Copiar el reporte completo</button>
+    <p style="font-size:12px;margin-top:8px">Mándatelo a ti mismo o a tu propio número y queda guardado para siempre.</p>
+
+    <h4>3 · Respaldo para restaurar</h4>
+    <button class="btn btn-ghost" id="rJson">💾 Bajar respaldo (.json)</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-ghost" id="rRest">♻️ Restaurar desde un respaldo</button>
+    <input type="file" id="rFile" accept=".json,application/json" style="display:none">
+    <p style="font-size:12px;margin-top:8px">El .json es el único que devuelve los datos a la app si cambias de celular. Al restaurar <b>no se borra</b> nada de lo que ya tienes.</p>
+
+    <div style="height:16px"></div>
+    <button class="btn btn-green" onclick="closeModal()">Listo</button>
+    <div style="height:14px"></div>
+    <p style="text-align:center;font-size:11px">Desarrollada por Vibras Positivas HM — Derechos de Autor Reservados</p>
+  `);
+  const tel = ()=> modalBox.querySelector('#rTel').checked;
+  modalBox.querySelector('#rXls').onclick   = ()=> exportarExcel(tel());
+  modalBox.querySelector('#rCsv').onclick   = ()=> exportarCSV(tel());
+  modalBox.querySelector('#rWaFile').onclick= ()=> exportarExcel(tel());
+  modalBox.querySelector('#rWaTxt').onclick = ()=> enviarWhatsApp(tel());
+  modalBox.querySelector('#rCopy').onclick  = async()=>{
+    if(!CLIENTES.length){ toast('Todavía no hay datos'); return; }
+    try{ await navigator.clipboard.writeText(reporteTexto(tel(),true)); toast('Reporte copiado ✔'); }
+    catch(e){ toast('No se pudo copiar en este navegador'); }
+  };
+  modalBox.querySelector('#rJson').onclick  = ()=> exportar();
+  const inp = modalBox.querySelector('#rFile');
+  modalBox.querySelector('#rRest').onclick  = ()=> inp.click();
+  inp.onchange = e=>{ const f=e.target.files&&e.target.files[0]; if(f) restaurarArchivo(f); };
+}
+
 async function borrarTodo(){
   if(!confirm('¿Borrar TODOS los clientes y fiados? Esto no se puede deshacer. Te recomendamos exportar una copia primero.'))return;
   await clearStore('clientes'); await clearStore('movimientos');
@@ -658,6 +949,7 @@ document.getElementById('btnGear').onclick=abrirAjustes;
 window.abrirCliente=abrirCliente; window.abrirFiar=abrirFiar; window.abrirAbono=abrirAbono;
 window.abrirNuevoCliente=abrirNuevoCliente; window.cargarEjemplo=cargarEjemplo;
 window.mostrarPolitica=mostrarPolitica; window.exportar=exportar; window.borrarTodo=borrarTodo; window.closeModal=closeModal;
+window.abrirRespaldo=abrirRespaldo; window.exportarExcel=exportarExcel; window.exportarCSV=exportarCSV; window.enviarWhatsApp=enviarWhatsApp;
 
 /* ---- Init ---- */
 (async function init(){
