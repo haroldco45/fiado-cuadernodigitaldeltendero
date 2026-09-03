@@ -91,7 +91,11 @@ main{padding:18px 18px 120px 44px;position:relative;z-index:1}
 .searchbar input{flex:1;border:1px solid var(--line-strong);background:var(--paper);border-radius:14px;padding:13px 14px;font-size:15px;font-family:inherit;color:var(--ink)}
 .searchbar input:focus{outline:2px solid var(--green);outline-offset:1px}
 
-.sectionhead{display:flex;align-items:baseline;justify-content:space-between;margin:20px 0 8px}
+.tabs-filtro{display:flex;gap:6px;margin:10px 0 6px}
+.tab-btn{border:1px solid var(--line-strong);background:var(--paper-2);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--ink-soft);cursor:pointer}
+.tab-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+
+.sectionhead{display:flex;align-items:baseline;justify-content:space-between;margin:14px 0 8px}
 .sectionhead h2{font-size:19px}
 .sectionhead .link{background:none;border:0;color:var(--green);font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
 
@@ -269,6 +273,7 @@ const clearStore = s=>new Promise((res,rej)=>{const r=tx(s,'readwrite').clear();
 
 /* ============ Estado en memoria ============ */
 let CLIENTES=[], MOVS=[], CFG={k:'cfg',tienda:'Mi tienda',tendero:'',plantilla:'', verTodos:false, verTelefono:false};
+let mostrarTodosFiltro = false; // toggle para ver deudores o todos
 
 async function cargarTodo(){
   CLIENTES = await getAll('clientes');
@@ -280,7 +285,7 @@ async function cargarTodo(){
 async function guardarCfg(){ CFG.k='cfg'; await put('config',CFG); document.getElementById('hTienda').textContent=CFG.tienda||'Mi tienda'; }
 
 function saldoDe(id){
-  return MOVS.filter(m=>m.clienteId===id).reduce((s,m)=> s + (m.tipo==='fiado'? m.monto : -m.monto), 0);
+  return MOVS.filter(m=>m.clienteId===id).reduce((s,m)=> s + (m.tipo==='fiado'? (+m.monto||0) : -(+m.monto||0)), 0);
 }
 function movsDe(id){ return MOVS.filter(m=>m.clienteId===id).sort((a,b)=> new Date(b.fecha)-new Date(a.fecha)); }
 function deudaMasVieja(id){
@@ -295,11 +300,12 @@ const main=document.getElementById('main');
 let filtro='';
 
 function render(){
-  const conSaldo = CLIENTES.map(c=>({c,saldo:saldoDe(c.id),vieja:deudaMasVieja(c.id)}))
-                            .filter(x=>x.saldo>0.5);
+  const todosCalculados = CLIENTES.map(c=>({c,saldo:saldoDe(c.id),vieja:deudaMasVieja(c.id)}));
+  const conSaldo = todosCalculados.filter(x=>x.saldo>0.5);
   const totalPorCobrar = conSaldo.reduce((s,x)=>s+x.saldo,0);
-  const cobradoHoy = MOVS.filter(m=>m.tipo==='abono'&&esHoyCO(m.fecha)).reduce((s,m)=>s+m.monto,0);
+  const cobradoHoy = MOVS.filter(m=>m.tipo==='abono'&&esHoyCO(m.fecha)).reduce((s,m)=>(+m.monto||0)+s,0);
   const nDeudores = conSaldo.length;
+  const alDia = CLIENTES.length - conSaldo.length;
 
   if(CLIENTES.length===0){
     main.innerHTML = `
@@ -316,13 +322,16 @@ function render(){
     return;
   }
 
-  let lista = conSaldo.sort((a,b)=>b.saldo-a.saldo);
-  const alDia = CLIENTES.length - conSaldo.length;
+  // Lista base según pestaña o buscador
+  let lista = [];
   if(filtro){
     const f=filtro.toLowerCase();
-    lista = CLIENTES.map(c=>({c,saldo:saldoDe(c.id),vieja:deudaMasVieja(c.id)}))
-      .filter(x=>x.c.nombre.toLowerCase().includes(f))
-      .sort((a,b)=>b.saldo-a.saldo);
+    lista = todosCalculados.filter(x=>x.c.nombre.toLowerCase().includes(f))
+                           .sort((a,b)=>b.saldo-a.saldo);
+  } else if(mostrarTodosFiltro){
+    lista = todosCalculados.sort((a,b)=>b.saldo-a.saldo || a.c.nombre.localeCompare(b.c.nombre));
+  } else {
+    lista = conSaldo.sort((a,b)=>b.saldo-a.saldo);
   }
 
   main.innerHTML = `
@@ -337,19 +346,31 @@ function render(){
       <div class="stat green"><div class="n money">${COP(cobradoHoy)}</div><div class="l">Cobrado hoy</div></div>
     </div>
     <div class="searchbar">
-      <input id="q" placeholder="Buscar cliente…" value="${filtro.replace(/"/g,'&quot;')}" inputmode="search">
+      <input id="q" placeholder="Buscar cliente por nombre…" value="${filtro.replace(/"/g,'&quot;')}" inputmode="search">
     </div>
+
+    <div class="tabs-filtro">
+      <button class="tab-btn ${!mostrarTodosFiltro && !filtro ? 'active' : ''}" onclick="cambiarFiltroVista(false)">Solo deudores (${nDeudores})</button>
+      <button class="tab-btn ${mostrarTodosFiltro && !filtro ? 'active' : ''}" onclick="cambiarFiltroVista(true)">Todos (${CLIENTES.length})</button>
+    </div>
+
     <div class="sectionhead">
-      <h2>${filtro?'Resultados':'Cuentas por cobrar'}</h2>
+      <h2>${filtro?'Resultados':(mostrarTodosFiltro?'Todos los clientes':'Cuentas por cobrar')}</h2>
       <button class="link" onclick="abrirNuevoCliente()">＋ Cliente</button>
     </div>
     <div class="ledger" id="ledger">
       ${lista.length? lista.map(rowHTML).join('') :
-        `<div class="empty"><div class="em">✅</div><h3>${filtro?'Sin resultados':'¡Nadie te debe!'}</h3><p>${filtro?'Prueba con otro nombre.':'Tu cartera está al día.'}</p></div>`}
+        `<div class="empty"><div class="em">✅</div><h3>${filtro?'Sin resultados':'¡Nadie te debe!'}</h3><p>${filtro?'Prueba con otro nombre.':'Todos los clientes están al día.'}</p></div>`}
     </div>`;
 
   const q=document.getElementById('q');
   if(q){ q.oninput=e=>{filtro=e.target.value; const pos=e.target.selectionStart; render(); const nq=document.getElementById('q'); if(nq){nq.focus();nq.setSelectionRange(pos,pos);} }; }
+}
+
+function cambiarFiltroVista(todos){
+  mostrarTodosFiltro = todos;
+  filtro = '';
+  render();
 }
 
 function rowHTML({c,saldo,vieja}){
@@ -385,7 +406,7 @@ function abrirCliente(id){
     <div class="vbody">
       <div class="detail-saldo">
         <div class="lbl">${debe?'Debe':'Saldo'}</div>
-        <div class="v ${debe?'debe':'aldia'} money">${debe?COP(saldo):'Al día'}</div>
+        <div class="v ${debe?'debe':'aldia'} money">${debe?COP(saldo):'Al día ($0)'}</div>
         <div class="phone-line">
           <span id="phTxt">${CFG.verTelefono? (c.telefono||'Sin teléfono') : maskPhone(c.telefono)}</span>
           ${c.telefono?`<button id="phToggle">${CFG.verTelefono?'ocultar':'ver'}</button>`:''}
@@ -394,7 +415,7 @@ function abrirCliente(id){
       <div class="btnrow three">
         <button class="btn btn-red btn-sm" id="bFiar">＋ Fiar</button>
         <button class="btn btn-green btn-sm" id="bAbono">Abono</button>
-        <button class="btn btn-wa btn-sm" id="bWa" ${debe?'':'disabled style="opacity:.5"'}>WhatsApp</button>
+        <button class="btn btn-wa btn-sm" id="bWa">WhatsApp</button>
       </div>
       <div class="sectionhead"><h2 style="font-size:16px">Historial</h2></div>
       <div class="ledger">
@@ -419,7 +440,7 @@ function abrirCliente(id){
   el.querySelector('.x').onclick=()=>closeView(el);
   el.querySelector('#bFiar').onclick=()=>abrirFiar(id);
   el.querySelector('#bAbono').onclick=()=>abrirAbono(id);
-  const wa=el.querySelector('#bWa'); if(debe) wa.onclick=()=>enviarWhatsAppCliente(c,saldo);
+  el.querySelector('#bWa').onclick=()=>enviarWhatsAppCliente(c,saldoDe(id));
   const pt=el.querySelector('#phToggle'); if(pt) pt.onclick=()=>{CFG.verTelefono=!CFG.verTelefono; guardarCfg(); el.querySelector('#phTxt').textContent=CFG.verTelefono?(c.telefono||'Sin teléfono'):maskPhone(c.telefono); pt.textContent=CFG.verTelefono?'ocultar':'ver';};
   el.querySelector('#bDel').onclick=async()=>{
     if(!confirm('¿Eliminar a '+c.nombre+' y todo su historial? Esta acción no se puede deshacer.'))return;
@@ -481,9 +502,9 @@ function abrirFiar(clienteId){
 /* ---- Registrar abono ---- */
 function abrirAbono(clienteId){
   const c=CLIENTES.find(x=>x.id===clienteId);
-  const saldo=saldoDe(clienteId);
+  const saldoActual=saldoDe(clienteId);
 
-  // Detecta facturas de fiados registrados para este cliente
+  // Extraer facturas asociadas a fiados
   const facturasCliente = [...new Set(
     MOVS.filter(m=>m.clienteId===clienteId && m.tipo==='fiado' && m.factura)
         .map(m=>m.factura.trim())
@@ -493,7 +514,7 @@ function abrirAbono(clienteId){
   const el=openView(`
     <div class="vhead"><button class="x">‹</button><h2>Registrar abono</h2></div>
     <div class="vbody">
-      <div class="detail-saldo"><div class="lbl">${esc(c.nombre)} debe</div><div class="v debe money">${COP(saldo)}</div></div>
+      <div class="detail-saldo"><div class="lbl">${esc(c.nombre)} debe</div><div class="v debe money">${COP(saldoActual)}</div></div>
       
       <label class="f">¿A qué factura abona? (opcional)</label>
       ${facturasCliente.length ? `
@@ -508,7 +529,7 @@ function abrirAbono(clienteId){
       <label class="f">¿Cuánto abonó?</label>
       <input class="f moneyin" id="monto" inputmode="numeric" placeholder="$0" autocomplete="off">
       <div class="chips">
-        <button class="chip q" data-full="1">Pagó todo (${COP(saldo)})</button>
+        <button class="chip q" id="btnPagarTodo">Pagó todo (${COP(saldoActual)})</button>
       </div>
       <div style="height:26px"></div>
       <button class="btn btn-green" id="guardar">Guardar abono</button>
@@ -532,7 +553,7 @@ function abrirAbono(clienteId){
 
   const monto=el.querySelector('#monto');
   monto.oninput=()=>{const raw=monto.value.replace(/\D/g,''); monto.value=raw?('$'+NUM(+raw)):'';};
-  el.querySelector('.chip').onclick=()=>{monto.value='$'+NUM(saldo);};
+  el.querySelector('#btnPagarTodo').onclick=()=>{monto.value='$'+NUM(saldoActual);};
 
   el.querySelector('#guardar').onclick=async()=>{
     const val=+monto.value.replace(/\D/g,'');
@@ -551,11 +572,47 @@ function abrirAbono(clienteId){
       creado: isoCO()
     });
 
-    await cargarTodo(); render(); closeView(el);
-    const nuevo=saldoDe(clienteId);
-    toast(nuevo<=0.5?'¡Cuenta saldada! ✅':'Abono registrado ✔');
+    // Recargar estado antes de calcular saldos
+    await cargarTodo();
+    render();
+    closeView(el);
+
+    const nuevoSaldo = saldoDe(clienteId);
+    
+    // Pantalla de confirmación con acceso directo a WhatsApp
+    abrirConfirmacionAbono(c, nuevoSaldo, val, facFinal);
   };
   setTimeout(()=>monto.focus(),350);
+}
+
+/* ---- Pantalla de confirmación tras abonar ---- */
+function abrirConfirmacionAbono(c, nuevoSaldo, valorAbonado, facturaAbonada){
+  const pazYSalvo = nuevoSaldo <= 0.5;
+  const el = openView(`
+    <div class="vhead"><button class="x">✕</button><h2>Abono registrado</h2></div>
+    <div class="vbody" style="text-align:center">
+      <div style="font-size:48px;margin:20px 0 10px">${pazYSalvo ? '🎉' : '✅'}</div>
+      <h3 style="font-size:24px;margin-bottom:6px">${pazYSalvo ? '¡Cuenta al día!' : '¡Abono guardado!'}</h3>
+      <p style="color:var(--ink-soft);margin-bottom:20px">Se abonó ${COP(valorAbonado)}${facturaAbonada ? ' a la factura #' + esc(facturaAbonada) : ''}</p>
+      
+      <div class="detail-saldo" style="background:var(--paper-2);border-radius:18px;padding:20px;border:1px solid var(--line)">
+        <div class="lbl">Nuevo saldo de ${esc(c.nombre)}</div>
+        <div class="v ${pazYSalvo ? 'aldia' : 'debe'} money">${pazYSalvo ? 'Al día ($0)' : COP(nuevoSaldo)}</div>
+      </div>
+
+      <div style="height:24px"></div>
+      <button class="btn btn-wa" id="bWaDirecto">📱 Enviar comprobante por WhatsApp</button>
+      <div style="height:10px"></div>
+      <button class="btn btn-ghost" id="bVolver">Volver al cuaderno</button>
+    </div>
+  `);
+
+  el.querySelector('.x').onclick = ()=> closeView(el);
+  el.querySelector('#bVolver').onclick = ()=> closeView(el);
+  el.querySelector('#bWaDirecto').onclick = ()=>{
+    closeView(el);
+    enviarWhatsAppCliente(c, nuevoSaldo);
+  };
 }
 
 /* ---- Nuevo cliente (con Habeas Data) ---- */
@@ -588,10 +645,11 @@ function abrirNuevoCliente(){
   setTimeout(()=>el.querySelector('#nombre').focus(),350);
 }
 
-/* ---- WhatsApp: Cobro a cliente con detalle de facturas y abonos ---- */
+/* ---- WhatsApp: Cobro / Comprobante con detalle exacto ---- */
 function mensajeDefault(nombre, saldo, cId){
   const t = CFG.tienda || 'la tienda';
   const firma = CFG.tendero ? ('\n\n— ' + CFG.tendero) : '';
+  const alDia = saldo <= 0.5;
   
   // Movimientos ordenados cronológicamente
   const ms = movsDe(cId).slice().reverse();
@@ -612,6 +670,10 @@ function mensajeDefault(nombre, saldo, cId){
     });
   }
 
+  if(alDia){
+    return `Hola ${nombre} 👋 Le escribo de *${t}*.\n\nLe confirmamos que su cuenta se encuentra *completamente al día*. ¡Muchas gracias por su puntualidad y confianza! 🙌${detalleTxt}\n\n📌 *Saldo pendiente:* ${COP(0)}${firma}`;
+  }
+
   return `Hola ${nombre} 👋 Le escribo de *${t}*.\n\nLe comparto el estado de su cuenta con nosotros:${detalleTxt}\n\n📌 *Saldo pendiente:* ${COP(saldo)}\n\nCuando pueda me colabora, ¡mil gracias! 🙏${firma}`;
 }
 
@@ -624,11 +686,11 @@ function enviarWhatsAppCliente(c, saldo){
     : mensajeDefault(c.nombre.split(' ')[0] ? ('Don/Doña ' + c.nombre.split(' ').slice(-1)[0]) : c.nombre, saldo, c.id);
 
   const el = openView(`
-    <div class="vhead"><button class="x">‹</button><h2>Enviar estado de cuenta</h2></div>
+    <div class="vhead"><button class="x">‹</button><h2>Enviar comprobante</h2></div>
     <div class="vbody">
-      <div class="notice">Revisa el extracto antes de enviarlo. Saldrá con cada factura, abono y saldo pendiente.</div>
+      <div class="notice">Revisa el comprobante antes de enviarlo. Contiene el historial detallado y el saldo exacto.</div>
       <label class="f">Mensaje</label>
-      <textarea class="f" id="msg" rows="10">${esc(msg)}</textarea>
+      <textarea class="f" id="msg" rows="11">${esc(msg)}</textarea>
       ${c.telefono ? '' : '<div class="notice" style="border-color:var(--amber)">Este cliente no tiene teléfono. Agrégalo en su perfil o comparte el mensaje manualmente.</div>'}
       <div style="height:20px"></div>
       <button class="btn btn-wa" id="enviar">Abrir WhatsApp</button>
@@ -668,7 +730,7 @@ function abrirAjustes(){
     <label class="f">Tu nombre (firma del mensaje)</label>
     <input class="f" id="cfgTendero" value="${esc(CFG.tendero)}" placeholder="Ej: Doña Marta">
     <label class="f">Plantilla de WhatsApp (opcional)</label>
-    <textarea class="f" id="cfgPlantilla" rows="4" placeholder="Deja vacío para usar el mensaje automático con detalle de movimientos.">${esc(CFG.plantilla||'')}</textarea>
+    <textarea class="f" id="cfgPlantilla" rows="4" placeholder="Deja vacío para usar el mensaje automático con detalle de movimientos y facturas.">${esc(CFG.plantilla||'')}</textarea>
     <div style="height:16px"></div>
     <button class="btn btn-green" id="cfgGuardar">Guardar ajustes</button>
     <div style="height:22px"></div>
@@ -1041,6 +1103,7 @@ window.abrirCliente=abrirCliente; window.abrirFiar=abrirFiar; window.abrirAbono=
 window.abrirNuevoCliente=abrirNuevoCliente; window.cargarEjemplo=cargarEjemplo;
 window.mostrarPolitica=mostrarPolitica; window.exportar=exportar; window.borrarTodo=borrarTodo; window.closeModal=closeModal;
 window.abrirRespaldo=abrirRespaldo; window.exportarExcel=exportarExcel; window.exportarCSV=exportarCSV; window.enviarWhatsApp=enviarWhatsApp;
+window.cambiarFiltroVista=cambiarFiltroVista;
 
 /* ---- Init ---- */
 (async function init(){
