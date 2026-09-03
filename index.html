@@ -59,7 +59,6 @@ body{
   padding-bottom:env(safe-area-inset-bottom);
 }
 .wrap{max-width:520px;margin:0 auto;min-height:100vh;position:relative;background:var(--paper)}
-/* Signature: the red margin rule of a physical ledger */
 .wrap::before{content:"";position:fixed;top:0;bottom:0;left:calc(50% - 260px + 26px);width:2px;background:var(--red);opacity:.55;z-index:0;pointer-events:none}
 @media(max-width:520px){.wrap::before{left:26px}}
 
@@ -76,7 +75,6 @@ header .clock b{display:block;font-size:14px;font-variant-numeric:tabular-nums}
 main{padding:18px 18px 120px 44px;position:relative;z-index:1}
 @media(max-width:520px){main{padding-left:44px}}
 
-/* Hero: total por cobrar */
 .hero{background:linear-gradient(160deg,#0D6B44,#083E28);color:var(--paper);border-radius:20px;padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .hero .lbl{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
 .hero .big{font-family:'Fraunces',serif;font-weight:900;font-size:clamp(40px,13vw,58px);margin-top:4px;line-height:1}
@@ -97,7 +95,6 @@ main{padding:18px 18px 120px 44px;position:relative;z-index:1}
 .sectionhead h2{font-size:19px}
 .sectionhead .link{background:none;border:0;color:var(--green);font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
 
-/* Ledger list */
 .ledger{border-top:1px solid var(--line)}
 .row{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--line);background:
   repeating-linear-gradient(transparent,transparent 30px,rgba(214,64,47,.03) 31px);
@@ -110,7 +107,7 @@ main{padding:18px 18px 120px 44px;position:relative;z-index:1}
 .row .amt{text-align:right;flex:0 0 auto}
 .row .amt .v{font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
 .row .amt .v.debe{color:var(--red)} .row .amt .v.aldia{color:var(--green)}
-/* temperature bar */
+
 .temp{height:5px;border-radius:999px;background:var(--line-strong);margin-top:6px;overflow:hidden;width:64px;margin-left:auto}
 .temp span{display:block;height:100%}
 .t-verde span{background:var(--green)} .t-ambar span{background:var(--amber)} .t-rojo span{background:var(--red)}
@@ -120,7 +117,6 @@ main{padding:18px 18px 120px 44px;position:relative;z-index:1}
 .empty h3{font-size:20px;color:var(--ink);margin:10px 0 4px}
 .empty p{font-size:14px;margin:0 0 18px}
 
-/* Buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:15px 18px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;width:100%}
 .btn-green{background:var(--green);color:var(--paper)}
 .btn-green:active{background:var(--green-deep)}
@@ -131,11 +127,9 @@ main{padding:18px 18px 120px 44px;position:relative;z-index:1}
 .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .btnrow.three{grid-template-columns:1fr 1fr 1fr}
 
-/* FAB */
 .fab{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));left:50%;transform:translateX(calc(-50% + 234px));background:var(--red);color:#fff;border:0;border-radius:18px;padding:16px 20px;font-size:16px;font-weight:700;font-family:inherit;box-shadow:0 10px 24px -8px rgba(198,58,42,.7);cursor:pointer;z-index:30;display:flex;align-items:center;gap:8px}
 @media(max-width:520px){.fab{transform:translateX(0);left:auto;right:16px}}
 
-/* Views / sheets */
 .view{position:fixed;inset:0;background:var(--paper);z-index:40;overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.1,1);display:flex;flex-direction:column}
 .view.open{transform:none}
 .vhead{position:sticky;top:0;background:var(--green);color:var(--paper);padding:16px 18px;display:flex;align-items:center;gap:14px;z-index:2}
@@ -168,6 +162,10 @@ input.f:focus,textarea.f:focus,select.f:focus{outline:2px solid var(--green);out
 .mov .d .s{font-size:12px;color:var(--ink-soft)}
 .mov .m{font-weight:700;font-variant-numeric:tabular-nums}
 .mov .m.f{color:var(--red)} .mov .m.a{color:var(--green)}
+
+.tag-fac{display:inline-block;font-size:11px;font-weight:600;padding:2px 6px;border-radius:6px;margin-left:4px;vertical-align:middle}
+.tag-fac.fiado{background:#F3EEE2;color:var(--ink);border:1px solid var(--line-strong)}
+.tag-fac.abono{background:#E8F5E9;color:var(--green);border:1px solid #C8E6C9}
 
 .notice{background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:12.5px;color:var(--ink-soft);line-height:1.55;margin-top:14px}
 .notice b{color:var(--ink)}
@@ -215,12 +213,8 @@ footer.credit b{color:var(--green);font-weight:600}
   </footer>
 </div>
 
-<!-- Full-screen views injected here -->
 <div id="viewLayer"></div>
-
-<!-- Modal (política / ajustes) -->
 <div class="modal-bg" id="modalBg"><div class="modal" id="modalBox"></div></div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -228,7 +222,7 @@ footer.credit b{color:var(--green);font-weight:600}
 /* ============ Utilidades Colombia / formato ============ */
 const COP = n => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(Math.round(n||0));
 const NUM = n => new Intl.NumberFormat('es-CO',{maximumFractionDigits:0}).format(Math.round(n||0));
-function nowCO(){ // Date "vista" en zona Bogotá para cálculos de día
+function nowCO(){
   const s = new Date().toLocaleString('en-US',{timeZone:'America/Bogota'});
   return new Date(s);
 }
@@ -290,7 +284,6 @@ function saldoDe(id){
 }
 function movsDe(id){ return MOVS.filter(m=>m.clienteId===id).sort((a,b)=> new Date(b.fecha)-new Date(a.fecha)); }
 function deudaMasVieja(id){
-  // días desde el fiado más antiguo que aún no está cubierto (aprox: si hay saldo, usar fiado más viejo)
   const fs = MOVS.filter(m=>m.clienteId===id && m.tipo==='fiado').sort((a,b)=> new Date(a.fecha)-new Date(b.fecha));
   return fs.length? diasDesde(fs[0].fecha) : 0;
 }
@@ -401,15 +394,21 @@ function abrirCliente(id){
       <div class="btnrow three">
         <button class="btn btn-red btn-sm" id="bFiar">＋ Fiar</button>
         <button class="btn btn-green btn-sm" id="bAbono">Abono</button>
-        <button class="btn btn-wa btn-sm" id="bWa" ${debe?'':'disabled style=opacity:.5'}>WhatsApp</button>
+        <button class="btn btn-wa btn-sm" id="bWa" ${debe?'':'disabled style="opacity:.5"'}>WhatsApp</button>
       </div>
       <div class="sectionhead"><h2 style="font-size:16px">Historial</h2></div>
       <div class="ledger">
         ${ms.length? ms.map(m=>`
           <div class="mov">
             <div class="ic ${m.tipo==='fiado'?'f':'a'}">${m.tipo==='fiado'?'−':'✓'}</div>
-            <div class="d"><div class="t">${m.tipo==='fiado'?('Fiado'+(m.descripcion?' · '+esc(m.descripcion):'')):'Abono'}</div>
-              <div class="s">${fechaCO(m.fecha)}</div></div>
+            <div class="d">
+              <div class="t">
+                ${m.tipo==='fiado'
+                  ? ('Fiado' + (m.factura ? ` <span class="tag-fac fiado">Fact. #${esc(m.factura)}</span>` : '') + (m.descripcion ? ' · ' + esc(m.descripcion) : ''))
+                  : ('Abono' + (m.factura ? ` <span class="tag-fac abono">A Fact. #${esc(m.factura)}</span>` : '') + (m.descripcion ? ' · ' + esc(m.descripcion) : ''))}
+              </div>
+              <div class="s">${fechaCO(m.fecha)}</div>
+            </div>
             <div class="m ${m.tipo==='fiado'?'f':'a'} money">${m.tipo==='fiado'?'+':'−'}${COP(m.monto)}</div>
           </div>`).join('')
         : '<div class="empty" style="padding:26px"><p>Sin movimientos todavía.</p></div>'}
@@ -420,7 +419,7 @@ function abrirCliente(id){
   el.querySelector('.x').onclick=()=>closeView(el);
   el.querySelector('#bFiar').onclick=()=>abrirFiar(id);
   el.querySelector('#bAbono').onclick=()=>abrirAbono(id);
-  const wa=el.querySelector('#bWa'); if(debe) wa.onclick=()=>enviarWhatsApp(c,saldo);
+  const wa=el.querySelector('#bWa'); if(debe) wa.onclick=()=>enviarWhatsAppCliente(c,saldo);
   const pt=el.querySelector('#phToggle'); if(pt) pt.onclick=()=>{CFG.verTelefono=!CFG.verTelefono; guardarCfg(); el.querySelector('#phTxt').textContent=CFG.verTelefono?(c.telefono||'Sin teléfono'):maskPhone(c.telefono); pt.textContent=CFG.verTelefono?'ocultar':'ver';};
   el.querySelector('#bDel').onclick=async()=>{
     if(!confirm('¿Eliminar a '+c.nombre+' y todo su historial? Esta acción no se puede deshacer.'))return;
@@ -444,6 +443,8 @@ function abrirFiar(clienteId){
       </select>
       <label class="f">Monto del fiado</label>
       <input class="f moneyin" id="monto" inputmode="numeric" placeholder="$0" autocomplete="off">
+      <label class="f">Nº Factura / Remisión (opcional)</label>
+      <input class="f" id="factura" placeholder="Ej: F-1045, Rem 88…" autocomplete="off">
       <label class="f">¿Qué se llevó? (opcional)</label>
       <input class="f" id="desc" placeholder="Ej: mercado, gaseosa…" autocomplete="off">
       <div class="chips" id="chips">
@@ -462,7 +463,16 @@ function abrirFiar(clienteId){
     const cid=sel.value; const val=+monto.value.replace(/\D/g,'');
     if(!cid||cid==='__new') return toast('Elige un cliente');
     if(!val||val<=0) return toast('Escribe el monto');
-    await put('movimientos',{id:uid(),clienteId:cid,tipo:'fiado',monto:val,descripcion:el.querySelector('#desc').value.trim(),fecha:isoCO(),creado:isoCO()});
+    await put('movimientos',{
+      id: uid(),
+      clienteId: cid,
+      tipo: 'fiado',
+      monto: val,
+      factura: el.querySelector('#factura').value.trim(),
+      descripcion: el.querySelector('#desc').value.trim(),
+      fecha: isoCO(),
+      creado: isoCO()
+    });
     await cargarTodo(); render(); closeView(el); toast('Fiado registrado ✔');
   };
   if(!clienteId) setTimeout(()=>sel.focus(),350); else setTimeout(()=>monto.focus(),350);
@@ -470,11 +480,31 @@ function abrirFiar(clienteId){
 
 /* ---- Registrar abono ---- */
 function abrirAbono(clienteId){
-  const c=CLIENTES.find(x=>x.id===clienteId); const saldo=saldoDe(clienteId);
+  const c=CLIENTES.find(x=>x.id===clienteId);
+  const saldo=saldoDe(clienteId);
+
+  // Detecta facturas de fiados registrados para este cliente
+  const facturasCliente = [...new Set(
+    MOVS.filter(m=>m.clienteId===clienteId && m.tipo==='fiado' && m.factura)
+        .map(m=>m.factura.trim())
+        .filter(Boolean)
+  )];
+
   const el=openView(`
     <div class="vhead"><button class="x">‹</button><h2>Registrar abono</h2></div>
     <div class="vbody">
       <div class="detail-saldo"><div class="lbl">${esc(c.nombre)} debe</div><div class="v debe money">${COP(saldo)}</div></div>
+      
+      <label class="f">¿A qué factura abona? (opcional)</label>
+      ${facturasCliente.length ? `
+        <select class="f" id="selFactura" style="margin-bottom:8px">
+          <option value="">— Elegir factura —</option>
+          ${facturasCliente.map(f=>`<option value="${esc(f)}">Factura: #${esc(f)}</option>`).join('')}
+          <option value="__otra">✏️ Escribir otra factura...</option>
+        </select>
+      ` : ''}
+      <input class="f" id="facturaAbono" placeholder="Ej: F-1045, Rem 88…" autocomplete="off" style="${facturasCliente.length ? 'display:none;' : ''}">
+
       <label class="f">¿Cuánto abonó?</label>
       <input class="f moneyin" id="monto" inputmode="numeric" placeholder="$0" autocomplete="off">
       <div class="chips">
@@ -484,13 +514,43 @@ function abrirAbono(clienteId){
       <button class="btn btn-green" id="guardar">Guardar abono</button>
     </div>`);
   el.querySelector('.x').onclick=()=>closeView(el);
+
+  const selFac = el.querySelector('#selFactura');
+  const inpFac = el.querySelector('#facturaAbono');
+  if(selFac){
+    selFac.onchange=()=>{
+      if(selFac.value === '__otra'){
+        inpFac.style.display = 'block';
+        inpFac.value = '';
+        inpFac.focus();
+      } else {
+        inpFac.style.display = 'none';
+        inpFac.value = selFac.value;
+      }
+    };
+  }
+
   const monto=el.querySelector('#monto');
   monto.oninput=()=>{const raw=monto.value.replace(/\D/g,''); monto.value=raw?('$'+NUM(+raw)):'';};
   el.querySelector('.chip').onclick=()=>{monto.value='$'+NUM(saldo);};
+
   el.querySelector('#guardar').onclick=async()=>{
     const val=+monto.value.replace(/\D/g,'');
     if(!val||val<=0) return toast('Escribe el monto');
-    await put('movimientos',{id:uid(),clienteId,tipo:'abono',monto:val,descripcion:'',fecha:isoCO(),creado:isoCO()});
+
+    const facFinal = inpFac ? inpFac.value.trim() : (selFac ? selFac.value.trim() : '');
+
+    await put('movimientos',{
+      id: uid(),
+      clienteId,
+      tipo: 'abono',
+      monto: val,
+      factura: facFinal,
+      descripcion: '',
+      fecha: isoCO(),
+      creado: isoCO()
+    });
+
     await cargarTodo(); render(); closeView(el);
     const nuevo=saldoDe(clienteId);
     toast(nuevo<=0.5?'¡Cuenta saldada! ✅':'Abono registrado ✔');
@@ -528,40 +588,69 @@ function abrirNuevoCliente(){
   setTimeout(()=>el.querySelector('#nombre').focus(),350);
 }
 
-/* ---- WhatsApp ---- */
-function mensajeDefault(nombre,saldo){
-  const t=CFG.tienda||'la tienda';
-  const firma=CFG.tendero?('\n\n— '+CFG.tendero):'';
-  return `Hola ${nombre} 👋 Le escribo de ${t}. Con todo el cariño le recuerdo que tiene un saldo pendiente de ${COP(saldo)}. Cuando pueda me colabora, ¡mil gracias! 🙏${firma}`;
+/* ---- WhatsApp: Cobro a cliente con detalle de facturas y abonos ---- */
+function mensajeDefault(nombre, saldo, cId){
+  const t = CFG.tienda || 'la tienda';
+  const firma = CFG.tendero ? ('\n\n— ' + CFG.tendero) : '';
+  
+  // Movimientos ordenados cronológicamente
+  const ms = movsDe(cId).slice().reverse();
+  let detalleTxt = '';
+
+  if(ms.length > 0){
+    detalleTxt = '\n\n*Detalle de movimientos:*';
+    ms.forEach(m => {
+      const fecha = fechaCO(m.fecha);
+      if(m.tipo === 'fiado'){
+        const fac = m.factura ? ` (Fact: #${m.factura})` : '';
+        const desc = m.descripcion ? ` · ${m.descripcion}` : '';
+        detalleTxt += `\n➕ ${fecha} Fiado: ${COP(m.monto)}${fac}${desc}`;
+      } else {
+        const fac = m.factura ? ` (A Fact: #${m.factura})` : '';
+        detalleTxt += `\n➖ ${fecha} Abono: ${COP(m.monto)}${fac}`;
+      }
+    });
+  }
+
+  return `Hola ${nombre} 👋 Le escribo de *${t}*.\n\nLe comparto el estado de su cuenta con nosotros:${detalleTxt}\n\n📌 *Saldo pendiente:* ${COP(saldo)}\n\nCuando pueda me colabora, ¡mil gracias! 🙏${firma}`;
 }
-function enviarWhatsApp(c,saldo){
+
+function enviarWhatsAppCliente(c, saldo){
   let msg = (CFG.plantilla && CFG.plantilla.trim())
-    ? CFG.plantilla.replaceAll('{nombre}',c.nombre).replaceAll('{monto}',COP(saldo)).replaceAll('{tienda}',CFG.tienda||'la tienda')
-    : mensajeDefault(c.nombre.split(' ')[0]?('Don/Doña '+c.nombre.split(' ').slice(-1)[0]):c.nombre, saldo);
-  // vista previa editable
-  const el=openView(`
-    <div class="vhead"><button class="x">‹</button><h2>Recordar por WhatsApp</h2></div>
+    ? CFG.plantilla
+        .replaceAll('{nombre}', c.nombre)
+        .replaceAll('{monto}', COP(saldo))
+        .replaceAll('{tienda}', CFG.tienda || 'la tienda')
+    : mensajeDefault(c.nombre.split(' ')[0] ? ('Don/Doña ' + c.nombre.split(' ').slice(-1)[0]) : c.nombre, saldo, c.id);
+
+  const el = openView(`
+    <div class="vhead"><button class="x">‹</button><h2>Enviar estado de cuenta</h2></div>
     <div class="vbody">
-      <div class="notice">Revisa el mensaje antes de enviarlo. Se abrirá WhatsApp con el texto listo.</div>
+      <div class="notice">Revisa el extracto antes de enviarlo. Saldrá con cada factura, abono y saldo pendiente.</div>
       <label class="f">Mensaje</label>
-      <textarea class="f" id="msg" rows="6">${esc(msg)}</textarea>
-      ${c.telefono?'':'<div class="notice" style="border-color:var(--amber)">Este cliente no tiene teléfono. Agrégalo en su perfil o comparte el mensaje manualmente.</div>'}
+      <textarea class="f" id="msg" rows="10">${esc(msg)}</textarea>
+      ${c.telefono ? '' : '<div class="notice" style="border-color:var(--amber)">Este cliente no tiene teléfono. Agrégalo en su perfil o comparte el mensaje manualmente.</div>'}
       <div style="height:20px"></div>
       <button class="btn btn-wa" id="enviar">Abrir WhatsApp</button>
       <div style="height:10px"></div>
       <button class="btn btn-ghost" id="copiar">Copiar mensaje</button>
     </div>`);
-  el.querySelector('.x').onclick=()=>closeView(el);
-  el.querySelector('#enviar').onclick=()=>{
-    const texto=encodeURIComponent(el.querySelector('#msg').value);
-    let phone=(c.telefono||'').replace(/\D/g,'');
-    if(phone && phone.length===10) phone='57'+phone; // Colombia
-    const url = phone? `https://wa.me/${phone}?text=${texto}` : `https://wa.me/?text=${texto}`;
-    window.open(url,'_blank');
+
+  el.querySelector('.x').onclick = () => closeView(el);
+  el.querySelector('#enviar').onclick = () => {
+    const texto = encodeURIComponent(el.querySelector('#msg').value);
+    let phone = (c.telefono || '').replace(/\D/g, '');
+    if(phone && phone.length === 10) phone = '57' + phone;
+    const url = phone ? `https://wa.me/${phone}?text=${texto}` : `https://wa.me/?text=${texto}`;
+    window.open(url, '_blank');
   };
-  el.querySelector('#copiar').onclick=async()=>{
-    try{ await navigator.clipboard.writeText(el.querySelector('#msg').value); toast('Mensaje copiado ✔'); }
-    catch{ toast('Copia manual: mantén presionado el texto'); }
+  el.querySelector('#copiar').onclick = async () => {
+    try { 
+      await navigator.clipboard.writeText(el.querySelector('#msg').value); 
+      toast('Mensaje copiado ✔'); 
+    } catch { 
+      toast('Copia manual: mantén presionado el texto'); 
+    }
   };
 }
 
@@ -579,7 +668,7 @@ function abrirAjustes(){
     <label class="f">Tu nombre (firma del mensaje)</label>
     <input class="f" id="cfgTendero" value="${esc(CFG.tendero)}" placeholder="Ej: Doña Marta">
     <label class="f">Plantilla de WhatsApp (opcional)</label>
-    <textarea class="f" id="cfgPlantilla" rows="4" placeholder="Deja vacío para usar el mensaje automático. Usa {nombre}, {monto} y {tienda}.">${esc(CFG.plantilla||'')}</textarea>
+    <textarea class="f" id="cfgPlantilla" rows="4" placeholder="Deja vacío para usar el mensaje automático con detalle de movimientos.">${esc(CFG.plantilla||'')}</textarea>
     <div style="height:16px"></div>
     <button class="btn btn-green" id="cfgGuardar">Guardar ajustes</button>
     <div style="height:22px"></div>
@@ -612,17 +701,10 @@ function mostrarPolitica(){
     <button class="btn btn-green" onclick="closeModal()">Entendido</button>
   `);
 }
-async function exportar(){
-  const data={version:1,exportado:isoCO(),config:CFG,clientes:CLIENTES,movimientos:MOVS};
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  await compartirODescargar(blob,'fiado-respaldo-'+nowCO().toLocaleDateString('en-CA',{timeZone:'America/Bogota'})+'.json','Respaldo Fiado');
-}
+
 /* ============================================================
    COPIA DE SEGURIDAD — Excel / CSV / WhatsApp / Restaurar
-   (solo LEE los datos; nada de lo que ya tienes se modifica)
    ============================================================ */
-
-/* --- helpers de archivo --- */
 function stampCO(){ return nowCO().toLocaleDateString('en-CA',{timeZone:'America/Bogota'}); }
 function nombreTienda(){ return (CFG.tienda||'Mi tienda').replace(/[\\/:*?"<>|]/g,'').trim()||'Mi tienda'; }
 function horaCO(iso){ try{ return new Date(iso).toLocaleTimeString('es-CO',{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit',hour12:true}); }catch(e){ return ''; } }
@@ -643,7 +725,6 @@ async function compartirODescargar(blob, filename, titulo){
   toast('Archivo descargado ✔');
 }
 
-/* --- resumen de todo lo que hay guardado --- */
 function resumenDatos(){
   const filas = CLIENTES.map(c=>{
     const ms = MOVS.filter(m=>m.clienteId===c.id);
@@ -658,7 +739,6 @@ function resumenDatos(){
   return { filas, totalFiado, totalAbono, porCobrar, deben, alDia: filas.length-deben, nMovs: MOVS.length };
 }
 
-/* --- EXCEL (.xls, 3 hojas: Resumen / Clientes / Movimientos) --- */
 function xesc(s){ return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[m])); }
 const cT = v => '<Cell ss:StyleID="txt"><Data ss:Type="String">'+xesc(v)+'</Data></Cell>';
 const cN = v => '<Cell ss:StyleID="cop"><Data ss:Type="Number">'+(Math.round(Number(v)||0))+'</Data></Cell>';
@@ -672,7 +752,6 @@ function construirExcel(conTelefono){
     '<Worksheet ss:Name="'+xesc(nombre)+'"><Table>'+filas.join('')+'</Table>'+
     '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions></Worksheet>';
 
-  /* Hoja 1: Resumen */
   const h1 = [
     fila([cH('RESPALDO — CUADERNO DE FIADO')]),
     fila([cT('Tienda'), cT(CFG.tienda||'Mi tienda')]),
@@ -689,7 +768,6 @@ function construirExcel(conTelefono){
     fila([cT('Movimientos registrados'), cI(R.nMovs)])
   ];
 
-  /* Hoja 2: Clientes */
   const h2 = [ fila([cH('CLIENTE'),cH('TELÉFONO'),cH('SALDO ACTUAL'),cH('TOTAL FIADO'),cH('TOTAL ABONADO'),cH('DÍAS DEUDA MÁS VIEJA'),cH('ESTADO'),cH('MOVIMIENTOS'),cH('CLIENTE DESDE'),cH('AUTORIZÓ DATOS')]) ];
   R.filas.forEach(x=>{
     h2.push(fila([
@@ -705,8 +783,7 @@ function construirExcel(conTelefono){
   });
   h2.push(fila([cH('TOTAL'),cT(''),cN(R.porCobrar),cN(R.totalFiado),cN(R.totalAbono),cT(''),cT(''),cI(R.nMovs),cT(''),cT('')]));
 
-  /* Hoja 3: Movimientos */
-  const h3 = [ fila([cH('FECHA'),cH('HORA'),cH('CLIENTE'),cH('TELÉFONO'),cH('TIPO'),cH('DESCRIPCIÓN'),cH('FIADO (+)'),cH('ABONO (−)'),cH('ID')]) ];
+  const h3 = [ fila([cH('FECHA'),cH('HORA'),cH('CLIENTE'),cH('TELÉFONO'),cH('TIPO'),cH('FACTURA'),cH('DESCRIPCIÓN'),cH('FIADO (+)'),cH('ABONO (−)'),cH('ID')]) ];
   const porFecha = MOVS.slice().sort((a,b)=> new Date(a.fecha)-new Date(b.fecha));
   porFecha.forEach(m=>{
     const c = CLIENTES.find(x=>x.id===m.clienteId);
@@ -715,13 +792,14 @@ function construirExcel(conTelefono){
       cT(c? c.nombre : '(cliente eliminado)'),
       cT(c? (conTelefono? (c.telefono||'—') : maskPhone(c.telefono)) : '—'),
       cT(m.tipo==='fiado'?'Fiado':'Abono'),
+      cT(m.factura||''),
       cT(m.descripcion||''),
       cN(m.tipo==='fiado'? m.monto : 0),
       cN(m.tipo==='abono'? m.monto : 0),
       cT(m.id)
     ]));
   });
-  h3.push(fila([cH('TOTALES'),cT(''),cT(''),cT(''),cT(''),cT(''),cN(R.totalFiado),cN(R.totalAbono),cT('')]));
+  h3.push(fila([cH('TOTALES'),cT(''),cT(''),cT(''),cT(''),cT(''),cT(''),cN(R.totalFiado),cN(R.totalAbono),cT('')]));
 
   return '<?xml version="1.0" encoding="UTF-8"?>\n'+
   '<?mso-application progid="Excel.Sheet"?>\n'+
@@ -743,10 +821,9 @@ async function exportarExcel(conTelefono){
   await compartirODescargar(blob,'Fiado-'+nombreTienda().replace(/\s+/g,'-')+'-'+stampCO()+'.xls','Respaldo Fiado — '+nombreTienda());
 }
 
-/* --- CSV (por si el celular no abre .xls) --- */
 function csvCell(v){
   let s = String(v==null?'':v);
-  if(/^[=+\-@]/.test(s)) s="'"+s;          // evita fórmulas raras en Excel
+  if(/^[=+\-@]/.test(s)) s="'"+s;
   return '"'+s.replace(/"/g,'""')+'"';
 }
 async function exportarCSV(conTelefono){
@@ -763,16 +840,25 @@ async function exportarCSV(conTelefono){
   R.filas.forEach(x=>L.push([x.c.nombre, conTelefono?(x.c.telefono||''):maskPhone(x.c.telefono), Math.round(x.saldo), Math.round(x.fiado), Math.round(x.abono), (x.saldo>0.5?x.dias:0), (x.saldo>0.5?'Debe':'Al dia'), x.movs, x.c.creado?fechaCorta(x.c.creado):'', x.c.consentimiento?'Si':'No'].map(csvCell).join(';')));
   L.push('');
   L.push('MOVIMIENTOS');
-  L.push(['Fecha','Hora','Cliente','Tipo','Descripcion','Fiado (+)','Abono (-)','ID'].map(csvCell).join(';'));
+  L.push(['Fecha','Hora','Cliente','Tipo','Factura','Descripcion','Fiado (+)','Abono (-)','ID'].map(csvCell).join(';'));
   MOVS.slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).forEach(m=>{
     const c=CLIENTES.find(x=>x.id===m.clienteId);
-    L.push([fechaCorta(m.fecha), horaCO(m.fecha), c?c.nombre:'(eliminado)', m.tipo==='fiado'?'Fiado':'Abono', m.descripcion||'', m.tipo==='fiado'?Math.round(m.monto):0, m.tipo==='abono'?Math.round(m.monto):0, m.id].map(csvCell).join(';'));
+    L.push([
+      fechaCorta(m.fecha),
+      horaCO(m.fecha),
+      c?c.nombre:'(eliminado)',
+      m.tipo==='fiado'?'Fiado':'Abono',
+      m.factura||'',
+      m.descripcion||'',
+      m.tipo==='fiado'?Math.round(m.monto):0,
+      m.tipo==='abono'?Math.round(m.monto):0,
+      m.id
+    ].map(csvCell).join(';'));
   });
   const blob=new Blob(['\ufeff'+L.join('\r\n')],{type:'text/csv;charset=utf-8'});
   await compartirODescargar(blob,'Fiado-'+stampCO()+'.csv','Respaldo Fiado CSV');
 }
 
-/* --- REPORTE DE TEXTO PARA WHATSAPP --- */
 function reporteTexto(conTelefono, conDetalle){
   const R = resumenDatos();
   const T=[];
@@ -810,7 +896,8 @@ function reporteTexto(conTelefono, conDetalle){
       T.push('');
       T.push('▸ *'+x.c.nombre+'*  (saldo '+COP(x.saldo)+')');
       ms.forEach(m=>{
-        T.push('   '+fechaCorta(m.fecha)+'  '+(m.tipo==='fiado'?'Fiado':'Abono')+(m.descripcion?' · '+m.descripcion:'')+'  '+(m.tipo==='fiado'?'+':'−')+COP(m.monto));
+        const facTxt = m.factura ? ' [Fact: #' + m.factura + ']' : '';
+        T.push('   '+fechaCorta(m.fecha)+'  '+(m.tipo==='fiado'?'Fiado':'Abono')+facTxt+(m.descripcion?' · '+m.descripcion:'')+'  '+(m.tipo==='fiado'?'+':'−')+COP(m.monto));
       });
     });
   }
@@ -823,14 +910,13 @@ async function enviarWhatsApp(conTelefono){
   if(!CLIENTES.length){ toast('Todavía no hay datos para enviar'); return; }
   const completo = reporteTexto(conTelefono,true);
   let envio = completo;
-  if(completo.length > 1600){                       // WhatsApp corta enlaces muy largos
+  if(completo.length > 1600){
     envio = reporteTexto(conTelefono,false) + '\n\n_(El detalle completo quedó copiado: pégalo en un segundo mensaje.)_';
     try{ await navigator.clipboard.writeText(completo); toast('Detalle completo copiado — pégalo aparte'); }catch(e){}
   }
   window.open('https://wa.me/?text='+encodeURIComponent(envio),'_blank');
 }
 
-/* --- RESTAURAR DESDE RESPALDO .json (solo agrega, no borra) --- */
 async function restaurarArchivo(file){
   try{
     const txt = await file.text();
@@ -852,7 +938,12 @@ async function restaurarArchivo(file){
   }
 }
 
-/* --- Modal de copia de seguridad --- */
+async function exportar(){
+  const data={version:1,exportado:isoCO(),config:CFG,clientes:CLIENTES,movimientos:MOVS};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  await compartirODescargar(blob,'fiado-respaldo-'+nowCO().toLocaleDateString('en-CA',{timeZone:'America/Bogota'})+'.json','Respaldo Fiado');
+}
+
 function abrirRespaldo(){
   const R = resumenDatos();
   openModal(`
@@ -919,16 +1010,16 @@ async function borrarTodo(){
 /* ---- Datos de ejemplo ---- */
 async function cargarEjemplo(){
   const demo=[
-    {n:'Don José Pérez',t:'3001234567',fiados:[[45000,'Mercado',12],[18000,'Gaseosas',3]],abonos:[[20000,8]]},
-    {n:'Doña Marta Gómez',t:'3109876543',fiados:[[12000,'Pan y huevos',1]],abonos:[]},
-    {n:'Wilmer Correa',t:'3155551212',fiados:[[80000,'Mercado quincena',34]],abonos:[[30000,20]]},
-    {n:'Yeimy Rodríguez',t:'',fiados:[[9000,'Recarga',22]],abonos:[]}
+    {n:'Don José Pérez',t:'3001234567',fiados:[[45000,'Mercado',12,'FAC-001'],[18000,'Gaseosas',3,'FAC-004']],abonos:[[20000,8,'FAC-001']]},
+    {n:'Doña Marta Gómez',t:'3109876543',fiados:[[12000,'Pan y huevos',1,'REM-102']],abonos:[]},
+    {n:'Wilmer Correa',t:'3155551212',fiados:[[80000,'Mercado quincena',34,'FAC-009']],abonos:[[30000,20,'FAC-009']]},
+    {n:'Yeimy Rodríguez',t:'',fiados:[[9000,'Recarga',22,'']],abonos:[]}
   ];
   for(const d of demo){
     const cid=uid();
     await put('clientes',{id:cid,nombre:d.n,telefono:d.t,consentimiento:!!d.t,fechaConsentimiento:d.t?isoCO():null,creado:isoCO()});
-    for(const [m,desc,dias] of d.fiados){ const f=nowCO(); f.setDate(f.getDate()-dias); await put('movimientos',{id:uid(),clienteId:cid,tipo:'fiado',monto:m,descripcion:desc,fecha:f.toISOString(),creado:f.toISOString()}); }
-    for(const [m,dias] of d.abonos){ const f=nowCO(); f.setDate(f.getDate()-dias); await put('movimientos',{id:uid(),clienteId:cid,tipo:'abono',monto:m,descripcion:'',fecha:f.toISOString(),creado:f.toISOString()}); }
+    for(const [m,desc,dias,fac] of d.fiados){ const f=nowCO(); f.setDate(f.getDate()-dias); await put('movimientos',{id:uid(),clienteId:cid,tipo:'fiado',monto:m,descripcion:desc,factura:fac||'',fecha:f.toISOString(),creado:f.toISOString()}); }
+    for(const [m,dias,fac] of d.abonos){ const f=nowCO(); f.setDate(f.getDate()-dias); await put('movimientos',{id:uid(),clienteId:cid,tipo:'abono',monto:m,descripcion:'',factura:fac||'',fecha:f.toISOString(),creado:f.toISOString()}); }
   }
   await cargarTodo(); render(); toast('Datos de ejemplo cargados');
 }
